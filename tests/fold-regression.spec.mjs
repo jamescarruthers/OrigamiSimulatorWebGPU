@@ -181,14 +181,25 @@ for (const c of CASES) {
       centroid: result.centroid,
     };
 
-    if (UPDATE || !fs.existsSync(goldenPath)) {
+    if (UPDATE) {
       fs.writeFileSync(
         goldenPath,
         JSON.stringify({ ...meta, positions: result.positions }, null, 0) + '\n'
       );
-      console.log(`[golden ${UPDATE ? 'updated' : 'created'}] ${key}  nodes=${result.numNodes}  err=${result.globalErrorText}`);
-      test.info().annotations.push({ type: 'golden', description: `${UPDATE ? 'updated' : 'created'} ${key}` });
+      console.log(`[golden updated] ${key}  nodes=${result.numNodes}  err=${result.globalErrorText}`);
+      test.info().annotations.push({ type: 'golden', description: `updated ${key}` });
       return;
+    }
+
+    // A missing golden is a FAILURE, not an auto-created baseline. Otherwise
+    // `npm run test:regression` would pass without asserting anything, and CI
+    // could silently establish a new baseline. Baselines must be generated
+    // explicitly and committed.
+    if (!fs.existsSync(goldenPath)) {
+      throw new Error(
+        `No golden snapshot for "${key}". Generate baselines first with ` +
+        '`npm run regression:update` (UPDATE_SNAPSHOTS=1), then commit tests/golden/*.json.'
+      );
     }
 
     const golden = JSON.parse(fs.readFileSync(goldenPath, 'utf8'));

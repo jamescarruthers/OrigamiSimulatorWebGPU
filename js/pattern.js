@@ -2,8 +2,6 @@
  * Created by amandaghassaei on 2/25/17.
  */
 
-import { saveFOLD } from './saveFOLD.js';
-
 export function initPattern(globals){
 
     var FOLD = require('fold');

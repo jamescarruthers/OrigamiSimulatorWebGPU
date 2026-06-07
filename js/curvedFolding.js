@@ -1,5 +1,3 @@
-import { saveFOLD } from './saveFOLD.js';
-
 export function initCurvedFolding(globals) {
 
     var FOLD = require('fold');
