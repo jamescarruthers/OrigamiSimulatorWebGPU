@@ -9,9 +9,14 @@ export function initThreeView(globals) {
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 500);
     // var camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -10000, 10000);//-40, 40);
-    var renderer = new THREE.WebGLRenderer({antialias: true});
+    var renderer = new THREE.WebGPURenderer({antialias: true});
     // var svgRenderer = new THREE.SVGRenderer();
     var controls;
+
+    // WebGPURenderer initializes its GPU backend asynchronously (and falls back
+    // to WebGL2 when WebGPU is unavailable). Until that resolves, render() must
+    // not be called, so every render is gated on this flag.
+    var rendererInitialized = false;
 
     init();
 
@@ -62,7 +67,16 @@ export function initThreeView(globals) {
 	    controls.maxDistance = 30;
         // controls.addEventListener("change", render);
 
-        _render();//render before model loads
+        // Kick off async backend init; render the initial blank frame once
+        // ready. The animation loop's _render() is gated on the same flag, so
+        // frames issued before init simply no-op until the backend is up.
+        renderer.init().then(function(){
+            rendererInitialized = true;
+            _render();//render before model loads
+        }).catch(function(e){
+            globals.warn("3D renderer failed to initialize: " + e.message);
+            console.error(e);
+        });
 
     }
 
@@ -105,6 +119,7 @@ export function initThreeView(globals) {
 
     var captureStats = $("#stopRecord>span");
     function _render(){
+        if (!rendererInitialized) return;
         if (globals.vrEnabled){
             globals.vive.render();
             return;

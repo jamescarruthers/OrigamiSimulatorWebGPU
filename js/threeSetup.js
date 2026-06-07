@@ -13,7 +13,13 @@
 // so we copy it into a plain object the helpers can write to. The copied
 // values are the same class references three uses internally, so `instanceof`
 // checks and the renderer continue to work.
-import * as THREE from 'three';
+//
+// We import from `three/webgpu`, which bundles the full three core *and* the
+// WebGPURenderer (+ node system). WebGPURenderer runs on WebGPU when available
+// and automatically falls back to WebGL2 otherwise. Importing the core only
+// from here (never also from 'three') keeps a single three instance so
+// `instanceof` checks hold.
+import * as THREE from 'three/webgpu';
 
 const ThreeGlobal = Object.assign({}, THREE);
 window.THREE = ThreeGlobal;
