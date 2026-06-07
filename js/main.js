@@ -2,6 +2,14 @@
  * Created by ghassaei on 2/22/17.
  */
 
+// three.js must be published as the global `THREE` before the vendored helper
+// scripts (which attach `THREE.SVGLoader` / `THREE.TrackballControls`) and the
+// app modules run. These three side-effecting imports must stay first and in
+// this order.
+import './threeSetup.js';
+import '../dependencies/TrackballControls.js';
+import '../dependencies/SVGLoader.js';
+
 import { initGlobals } from './globals.js';
 import { initThreeView } from './threeView.js';
 import { initControls } from './controls.js';

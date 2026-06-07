@@ -90,7 +90,7 @@ export function initThreeView(globals) {
 
     function startAnimation(){
         console.log("starting animation");
-        renderer.animate(_loop);
+        renderer.setAnimationLoop(_loop);
     }
 
     function pauseSimulation(){

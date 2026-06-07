@@ -746,34 +746,23 @@
     <script type="text/javascript" src="dependencies/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="dependencies/jquery-ui.min.js"></script>
     <script type="text/javascript" src="dependencies/flat-ui.min.js"></script>
-    <script type="text/javascript" src="dependencies/three.min.js"></script>
     <script type="text/javascript" src="dependencies/binary_stl_writer.js"></script>
-    <script type="text/javascript" src="dependencies/TrackballControls.js"></script>
-    <!--<script type="text/javascript" src="dependencies/Projector.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/SVGRenderer.js"></script>-->
     <script type="text/javascript" src="dependencies/underscore-min.js"></script>
     <script type="text/javascript" src="dependencies/FileSaver.min.js"></script>
-    <script type="text/javascript" src="dependencies/SVGLoader.js"></script>
-    <script type="text/javascript" src="dependencies/OBJExporter.js"></script>
     <script type="text/javascript" src="dependencies/path-data-polyfill.js"></script>
     <script type="text/javascript" src="dependencies/earcut.js"></script>
     <script type="text/javascript" src="dependencies/fold.js"></script>
     <script type="text/javascript" src="dependencies/CCapture.all.min.js"></script>
     <script type="text/javascript" src="dependencies/numeric-1.2.6.js"></script>
 
-    <!--<script type="text/javascript" src="dependencies/EffectComposer.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/MaskPass.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/ShaderPass.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/CopyShader.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/SSAOShader.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/Detector.js"></script>-->
-    <!--<script type="text/javascript" src="dependencies/RenderPass.js"></script>-->
+    <!-- three.js r184 is now an npm ES module imported by js/main.js (Phase 1),
+         which republishes it as the global `THREE` and then loads the vendored
+         TrackballControls + custom SVGLoader helpers. The old r87 three.min.js,
+         the moved helper scripts (TrackballControls/SVGLoader), the unused
+         OBJExporter, and the dead WebVR/VRController/datguivr stack are removed.
+         (WebVR was already deprecated upstream; see WEBGPU_MIGRATION_PLAN.md.) -->
 
-    <script type="text/javascript" src="dependencies/WebVR.js"></script>
-    <script type="text/javascript" src="dependencies/VRController.js"></script>
-    <script type="text/javascript" src="dependencies/datguivr.js"></script><!--made a lot of changes, don't replace with minified-->
-
-    <!-- Third-party libs that install window globals (THREE, $, _, fold/require,
+    <!-- Third-party libs that install window globals ($, _, fold/require,
          cdt2d, svgpath, ...). These stay as classic scripts and load before the
          module entry below. cdt2d/svgpath are required() by the app modules. -->
     <script type="text/javascript" src="dependencies/cdt2d.js"></script><!-- constrained delaunay triangulation -->

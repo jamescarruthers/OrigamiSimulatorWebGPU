@@ -9,8 +9,13 @@ export function initViveInterface(globals){
 
     var $status = $("#VRstatus");
 
-    if ( WEBVR.isAvailable() === false ) {
-        $status.html("WebVR not supported by this browser<br/>see <a href='https://webvr.info/' target='_blank'>webvr.info</a> for more information.");
+    // WebVR support was removed from the critical path in the WebGPU migration
+    // (Phase 1): the deprecated WebVR/VRController/datguivr scripts are no
+    // longer loaded, so the `WEBVR` global is absent. Bail out cleanly here so
+    // the rest of the app initializes; a future effort may reintroduce this on
+    // WebXR (see WEBGPU_MIGRATION_PLAN.md).
+    if ( typeof WEBVR === 'undefined' || WEBVR.isAvailable() === false ) {
+        $status.html("VR support has been removed from this build.");
         $("#VRoptions").hide();
         return;
     }

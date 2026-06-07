@@ -16,12 +16,12 @@ export function initModel(globals){
     backside.visible = false;
 
     var lineMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 1});
-    var hingeLines = new THREE.LineSegments(null, lineMaterial);
-    var mountainLines = new THREE.LineSegments(null, lineMaterial);
-    var valleyLines = new THREE.LineSegments(null, lineMaterial);
-    var cutLines = new THREE.LineSegments(null, lineMaterial);
-    var facetLines = new THREE.LineSegments(null, lineMaterial);
-    var borderLines = new THREE.LineSegments(null, lineMaterial);
+    var hingeLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
+    var mountainLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
+    var valleyLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
+    var cutLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
+    var facetLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
+    var borderLines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial);
 
     var lines = {
         U: hingeLines,
@@ -47,7 +47,6 @@ export function initModel(globals){
         frontside.geometry = geometry;
         backside.geometry = geometry;
         // geometry.verticesNeedUpdate = true;
-        geometry.dynamic = true;
 
         _.each(lines, function(line){
             var lineGeometry = line.geometry;
@@ -59,7 +58,6 @@ export function initModel(globals){
             lineGeometry = new THREE.BufferGeometry();
             line.geometry = lineGeometry;
             // lineGeometry.verticesNeedUpdate = true;
-            lineGeometry.dynamic = true;
         });
     }
 
@@ -96,7 +94,7 @@ export function initModel(globals){
             backside.visible = false;
         } else if (globals.colorMode == "axialStrain"){
             material = new THREE.MeshBasicMaterial({
-                vertexColors: THREE.VertexColors, side:THREE.DoubleSide,
+                vertexColors: true, side:THREE.DoubleSide,
                 polygonOffset: true,
                 polygonOffsetFactor: polygonOffset, // positive value pushes polygon further away
                 polygonOffsetUnits: 1
@@ -332,7 +330,7 @@ export function initModel(globals){
             for (var i=0;i<indicesArray.length;i++){
                 indices[i] = indicesArray[i];
             }
-            lines[key].geometry.addAttribute('position', positionsAttribute);
+            lines[key].geometry.setAttribute('position', positionsAttribute);
             lines[key].geometry.setIndex(new THREE.BufferAttribute(indices, 1));
             // lines[key].geometry.attributes.position.needsUpdate = true;
             // lines[key].geometry.index.needsUpdate = true;
@@ -341,8 +339,8 @@ export function initModel(globals){
             lines[key].geometry.center();
         });
 
-        geometry.addAttribute('position', positionsAttribute);
-        geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('position', positionsAttribute);
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         // geometry.attributes.position.needsUpdate = true;
         // geometry.index.needsUpdate = true;
