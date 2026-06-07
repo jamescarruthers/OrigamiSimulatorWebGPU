@@ -84,7 +84,16 @@ $(function() {
     var model = 'Tessellations/huffmanWaterbomb.svg';
     var match = /[\\?&]model=([^&#]*)/.exec(location.search);
     if (match) {
-        model = match[1];
+        // The captured value is a URL-encoded query parameter. Decode it so an
+        // encoded path separator (`%2F`, as produced by encodeURIComponent)
+        // matches the literal "/" in the demo links' `data-url`. URLs that
+        // already use a literal "/" decode to themselves, so this is a no-op
+        // for them.
+        try {
+            model = decodeURIComponent(match[1]);
+        } catch (e) {
+            model = match[1];
+        }
     }
     model = model.replace(/'/g, ''); // avoid messing up query
     $(".demo[data-url='"+model+"']").click();

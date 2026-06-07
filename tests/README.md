@@ -48,20 +48,21 @@ because software WebGL is deterministic run-to-run; **loosen `POS_TOL` for
 cross-backend comparisons** (WebGPU vs WebGL) where small `f32`-vs-`mediump`
 and reduction-order differences are expected (see plan §4.6).
 
-## ⚠️ Generating the baseline
+## The baseline
 
-The golden snapshots are intentionally **not committed yet**: they must be
-generated in an environment where a browser is available, because they define
-the baseline the migration is measured against.
+The golden snapshots in `tests/golden/*.json` are **committed**. They were
+generated under the current WebGL solver with software-rendered WebGL
+(ANGLE/SwiftShader) and are the baseline the migration is measured against.
+Run `npm run test:regression` to compare the live app against them; the
+software path is deterministic run-to-run, so the comparison passes with an
+exact (`0`) per-coordinate diff.
 
-> **Note on the Claude Code web sandbox:** this container's network policy
-> blocks the Playwright browser CDN (`cdn.playwright.dev`) and Ubuntu only
-> offers Chromium as a `snap` (no `snapd` in the container), so the headless
-> browser could not be installed *here*. The harness itself is verified
-> (`npx playwright test --list` discovers all cases, and the Vite dev server
-> serves the app unchanged). Run `npm run regression:update` once on a machine
-> or CI runner with browser access to produce `tests/golden/*.json`, then
-> commit those files.
+Regenerate them (only when an *intended* numeric change lands) with
+`npm run regression:update`, then commit the updated files.
 
-A `SessionStart` hook or CI step that runs `npx playwright install chromium`
-(where the CDN is reachable) is the recommended way to keep this runnable.
+> **Note on the Claude Code web sandbox:** the `SessionStart` hook
+> (`.claude/hooks/session-start.sh`) installs the Playwright Chromium build
+> when the environment's network policy allows the browser CDN
+> (`cdn.playwright.dev`). When the CDN is reachable the harness runs in-sandbox;
+> when it is blocked the hook skips the download and the harness must be run on
+> a machine or CI runner with browser access.
