@@ -3,7 +3,7 @@
  */
 
 
-function initStaticSolver(){
+export function initStaticSolver(){
 
     var nodes;
     var edges;

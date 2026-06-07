@@ -2,7 +2,7 @@
  * Created by ghassaei on 9/16/16.
  */
 
-function initThreeView(globals) {
+export function initThreeView(globals) {
 
     var scene = new THREE.Scene();
     var modelWrapper = new THREE.Object3D();

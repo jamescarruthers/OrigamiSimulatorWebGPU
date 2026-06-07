@@ -3,7 +3,7 @@
  */
 
 
-function initImporter(globals){
+export function initImporter(globals){
 
     var reader = new FileReader();
 
@@ -188,7 +188,7 @@ function initImporter(globals){
     window.addEventListener('drop', function(e) {
         e.preventDefault();
         if (e.dataTransfer.items) {
-            for (item of e.dataTransfer.items) {
+            for (const item of e.dataTransfer.items) {
                 if (item.kind === "file") {
                     const file = item.getAsFile();
                     openFile(file)
@@ -196,8 +196,8 @@ function initImporter(globals){
                 }
             }
         } else {
-            for (item of e.dataTransfer.files) {
-                openFile(file)
+            for (const item of e.dataTransfer.files) {
+                openFile(item)
                 break;
             }
         }

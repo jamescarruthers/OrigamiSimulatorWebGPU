@@ -773,31 +773,16 @@
     <script type="text/javascript" src="dependencies/VRController.js"></script>
     <script type="text/javascript" src="dependencies/datguivr.js"></script><!--made a lot of changes, don't replace with minified-->
 
-    <script type="text/javascript" src="js/dynamic/GLBoilerplate.js"></script>
-    <script type="text/javascript" src="js/dynamic/GPUMath.js"></script>
-    <script type="text/javascript" src="js/controls.js"></script>
-    <script type="text/javascript" src="js/threeView.js"></script>
-    <script type="text/javascript" src="js/globals.js"></script>
-    <script type="text/javascript" src="js/node.js"></script>
-    <script type="text/javascript" src="js/beam.js"></script>
-    <script type="text/javascript" src="js/crease.js"></script>
-    <script type="text/javascript" src="js/model.js"></script>
-    <script type="text/javascript" src="js/3dUI.js"></script>
-    <script type="text/javascript" src="js/staticSolver.js"></script>
-    <script type="text/javascript" src="js/dynamic/dynamicSolver.js"></script>
-    <script type="text/javascript" src="js/rigidSolver.js"></script>
-    <script type="text/javascript" src="js/pattern.js"></script>
-    <script type="text/javascript" src="js/saveSTL.js"></script>
-    <script type="text/javascript" src="js/saveFOLD.js"></script>
-    <script type="text/javascript" src="js/importer.js"></script>
-    <script type="text/javascript" src="js/VRInterface.js"></script>
-    <script type="text/javascript" src="js/videoAnimator.js"></script>
-
+    <!-- Third-party libs that install window globals (THREE, $, _, fold/require,
+         cdt2d, svgpath, ...). These stay as classic scripts and load before the
+         module entry below. cdt2d/svgpath are required() by the app modules. -->
     <script type="text/javascript" src="dependencies/cdt2d.js"></script><!-- constrained delaunay triangulation -->
     <script type="text/javascript" src="dependencies/svgpath.js"></script>
-    <script type="text/javascript" src="js/curvedFolding.js"></script>
 
-    <script type="text/javascript" src="js/main.js"></script>
+    <!-- App code: converted to ES modules and bundled by Vite (WebGPU migration
+         Phase 0). As a module script it is deferred, so it runs only after every
+         classic dependency <script> above has executed. -->
+    <script type="module" src="/js/main.js"></script>
 </head>
 <body>
 

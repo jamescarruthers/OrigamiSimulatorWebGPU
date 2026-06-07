@@ -5,7 +5,7 @@
 // var beamMaterialHighlight = new THREE.LineBasicMaterial({color: 0xff0000, linewidth: 1});
 // var beamMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 1});
 
-function Beam(nodes){
+export function Beam(nodes){
 
     this.type = "beam";
 

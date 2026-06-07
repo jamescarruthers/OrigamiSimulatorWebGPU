@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 5/26/17.
  */
 
-function initRigidSolver(){
+export function initRigidSolver(){
 
     var nodes;
     var edges;

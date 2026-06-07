@@ -3,7 +3,9 @@
  */
 
 
-function init3DUI(globals) {
+import { Node } from './node.js';
+
+export function init3DUI(globals) {
 
     var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();

@@ -1,6 +1,6 @@
 //from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
 
-function GLBoilerPlate(){
+export function GLBoilerPlate(){
 
     /**
      * Creates and compiles a shader.

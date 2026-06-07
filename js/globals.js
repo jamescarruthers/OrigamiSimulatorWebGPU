@@ -3,7 +3,7 @@
  */
 
 
-function initGlobals(){
+export function initGlobals(){
 
     var _globals = {
 

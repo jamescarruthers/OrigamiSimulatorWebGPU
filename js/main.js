@@ -2,7 +2,22 @@
  * Created by ghassaei on 2/22/17.
  */
 
-globals = {};
+import { initGlobals } from './globals.js';
+import { initThreeView } from './threeView.js';
+import { initControls } from './controls.js';
+import { init3DUI } from './3dUI.js';
+import { initImporter } from './importer.js';
+import { initModel } from './model.js';
+import { initDynamicSolver } from './dynamic/dynamicSolver.js';
+import { initPattern } from './pattern.js';
+import { initViveInterface } from './VRInterface.js';
+import { initVideoAnimator } from './videoAnimator.js';
+import { initCurvedFolding } from './curvedFolding.js';
+
+// `globals` is the app-wide mutable state object. It is published on `window`
+// so the (now module-scoped) app code — and any classic inline handlers —
+// share a single instance, and so bare `globals` references resolve to it.
+window.globals = {};
 
 function setCookie(c_name,value,exdays){var exdate=new Date();exdate.setDate(exdate.getDate() + exdays);var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());document.cookie=c_name + "=" + c_value;}
 function getCookie(c_name){var c_value = document.cookie;var c_start = c_value.indexOf(" " + c_name + "=");if (c_start == -1){c_start = c_value.indexOf(c_name + "=");}if (c_start == -1){c_value = null;}else{c_start = c_value.indexOf("=", c_start) + 1;var c_end = c_value.indexOf(";", c_start);if (c_end == -1){c_end = c_value.length;}c_value = unescape(c_value.substring(c_start,c_end));}return c_value;}
@@ -49,7 +64,7 @@ $(function() {
 
     }
 
-    globals = initGlobals();
+    window.globals = initGlobals();
     globals.threeView = initThreeView(globals);
     globals.controls = initControls(globals);
     globals.UI3D = init3DUI(globals);

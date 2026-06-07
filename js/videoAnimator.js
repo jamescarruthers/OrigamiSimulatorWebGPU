@@ -3,7 +3,7 @@
  */
 
 
-function initVideoAnimator(globals){
+export function initVideoAnimator(globals){
 
     var foldAngleSequence = [];
 
