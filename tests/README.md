@@ -34,6 +34,28 @@ npm run regression:update       # create/refresh golden snapshots (UPDATE_SNAPSH
 npm run test:regression         # compare current behavior against goldens
 ```
 
+### Backends (Playwright projects)
+
+The suite runs against two browser configurations:
+
+| Project | Backend | Exercises |
+| --- | --- | --- |
+| `chromium-swiftshader` | software **WebGL** (ANGLE/SwiftShader) | legacy WebGL1 GPGPU solver + WebGL2 render fallback |
+| `chromium-webgpu` | software **WebGPU** (SwiftShader Vulkan ICD via Dawn) | WebGPURenderer's WebGPU backend + (Phase 2) the WGSL compute solver |
+
+Run one with `--project`:
+
+```bash
+npx playwright test --project=chromium-webgpu
+npx playwright test --project=chromium-swiftshader
+```
+
+The `chromium-webgpu` project makes WebGPU work without a physical GPU by
+pointing Dawn at the SwiftShader Vulkan ICD that ships next to the Playwright
+Chromium binary (`VK_ICD_FILENAMES` + `--enable-unsafe-webgpu
+--enable-features=Vulkan`). This is what makes the Phase 2 compute solver
+testable in CI / containers. It is software-rendered and slower, but correct.
+
 Useful environment variables:
 
 | Var | Default | Purpose |
