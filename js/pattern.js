@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 2/25/17.
  */
 
-function initPattern(globals){
+export function initPattern(globals){
 
     var FOLD = require('fold');
 

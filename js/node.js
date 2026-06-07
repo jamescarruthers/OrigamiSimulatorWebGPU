@@ -8,7 +8,7 @@ var transparentVRMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, opacit
 
 var nodeGeo = new THREE.SphereGeometry(0.02,20);
 
-function Node(position, index){
+export function Node(position, index){
 
     this.type = "node";
     this.index = index;

@@ -3,7 +3,9 @@
  */
 
 
-function initGPUMath(){
+import { GLBoilerPlate } from './GLBoilerplate.js';
+
+export function initGPUMath(){
 
     var glBoilerplate = GLBoilerPlate();
 

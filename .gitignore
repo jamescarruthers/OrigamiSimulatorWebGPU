@@ -5,3 +5,10 @@ todo.rtf
 
 CreasePatternScripts/**/*.pdf
 CreasePatternScripts/**/*.svg
+
+# Node / build tooling (added in WebGPU migration Phase 0)
+node_modules/
+dist/
+test-results/
+playwright-report/
+.vite/

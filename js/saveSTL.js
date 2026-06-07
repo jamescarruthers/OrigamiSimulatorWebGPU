@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 5/2/17.
  */
 
-function makeSaveGEO(doublesided){
+export function makeSaveGEO(doublesided){
     var geo = new THREE.Geometry().fromBufferGeometry( globals.model.getGeometry() );
 
     if (geo.vertices.length == 0 || geo.faces.length == 0) {
@@ -88,7 +88,7 @@ function makeSaveGEO(doublesided){
     return geo;
 }
 
-function saveSTL(){
+export function saveSTL(){
 
     var data = [];
     data.push({geo: makeSaveGEO(globals.doublesidedSTL), offset:new THREE.Vector3(0,0,0), orientation:new THREE.Quaternion(0,0,0,1)});
@@ -100,7 +100,7 @@ function saveSTL(){
     saveAs(blob, filename + ".stl");
 }
 
-function saveOBJ(){
+export function saveOBJ(){
     //custom export to be compatible with freeform origami
     var geo = new THREE.Geometry().fromBufferGeometry( globals.model.getGeometry() );
     if (!globals.includeCurves) {

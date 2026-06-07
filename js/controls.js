@@ -3,7 +3,10 @@
  */
 
 
-function initControls(globals){
+import { saveSTL, saveOBJ } from './saveSTL.js';
+import { saveFOLD } from './saveFOLD.js';
+
+export function initControls(globals){
 
     window.addEventListener('resize', function(){
         if (globals.capturer) return;

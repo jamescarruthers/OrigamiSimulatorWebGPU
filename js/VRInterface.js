@@ -3,7 +3,9 @@
  */
 
 
-function initViveInterface(globals){
+import { Node } from './node.js';
+
+export function initViveInterface(globals){
 
     var $status = $("#VRstatus");
 

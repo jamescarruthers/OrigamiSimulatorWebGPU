@@ -1,4 +1,4 @@
-function initCurvedFolding(globals) {
+export function initCurvedFolding(globals) {
 
     var FOLD = require('fold');
 

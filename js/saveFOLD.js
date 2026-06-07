@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 5/6/17.
  */
 
-function saveFOLD(){
+export function saveFOLD(){
 
     var geo = new THREE.Geometry().fromBufferGeometry( globals.model.getGeometry() );
 

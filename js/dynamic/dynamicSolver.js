@@ -2,7 +2,9 @@
  * Created by ghassaei on 10/7/16.
  */
 
-function initDynamicSolver(globals){
+import { initGPUMath } from './GPUMath.js';
+
+export function initDynamicSolver(globals){
 
     globals.gpuMath = initGPUMath();
 
