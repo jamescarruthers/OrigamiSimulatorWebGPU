@@ -1,21 +1,21 @@
 /**
  * Created by amandaghassaei on 5/6/17.
+ *
+ * FOLD export. Rewritten for three r184 (no THREE.Geometry): vertex coordinates
+ * come from the current node positions via model.getPositionsAsync() (which maps
+ * the GPU buffer on the WebGPU path); edges/faces come from the FOLD data.
  */
 
-export function saveFOLD(){
+export async function saveFOLD(){
 
-    var geo = new THREE.Geometry().fromBufferGeometry( globals.model.getGeometry() );
+    var positions = await globals.model.getPositionsAsync();
 
-    if (geo.vertices.length == 0 || geo.faces.length == 0) {
+    if (!positions || positions.length === 0) {
         globals.warn("No geometry to save.");
         return;
     }
 
-    if (globals.exportScale != 1){
-        for (var i=0;i<geo.vertices.length;i++){
-            geo.vertices[i].multiplyScalar(globals.exportScale);
-        }
-    }
+    var scale = globals.exportScale != 1 ? globals.exportScale : 1;
 
     var filename = $("#foldFilename").val();
     if (filename == "") filename = globals.filename;
@@ -35,9 +35,8 @@ export function saveFOLD(){
         faces_vertices: []
     };
 
-    for (var i=0;i<geo.vertices.length;i++){
-        var vertex = geo.vertices[i];
-        json.vertices_coords.push([vertex.x, vertex.y, vertex.z]);
+    for (var i=0;i<positions.length;i+=3){
+        json.vertices_coords.push([positions[i]*scale, positions[i+1]*scale, positions[i+2]*scale]);
     }
 
     var useTriangulated = globals.triangulateFOLDexport;

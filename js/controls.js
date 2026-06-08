@@ -156,14 +156,19 @@ export function initControls(globals){
         globals.exportFoldAngle = val;
     });
 
+    // Export is async (it may map the GPU position buffer on the WebGPU path).
+    function reportExportError(e){
+        console.error(e);
+        globals.warn("Export failed: " + (e && e.message ? e.message : e));
+    }
     setLink("#doSTLsave", function(){
-        saveSTL();
+        saveSTL().catch(reportExportError);
     });
     setLink("#doOBJsave", function(){
-        saveOBJ();
+        saveOBJ().catch(reportExportError);
     });
     setLink("#doFOLDsave", function(){
-        saveFOLD();
+        saveFOLD().catch(reportExportError);
     });
 
     setLink("#rotateX", function(){
