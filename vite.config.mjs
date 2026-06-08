@@ -16,8 +16,13 @@ const PORT = Number(process.env.VITE_PORT) || 5179;
 
 export default defineConfig({
   root: '.',
-  // Don't let Vite's dep optimizer scan/transform the vendored libraries.
-  optimizeDeps: { disabled: true },
+  // Disable Vite's dependency discovery scan. The app calls a global
+  // `require('fold' | 'cdt2d' | 'svgpath')` — those are vendored Browserify
+  // bundles loaded as classic <script>s that publish a global `require`, NOT
+  // npm packages, so esbuild's scanner fails to resolve them. With discovery
+  // off, three (the one real npm dependency, added in Phase 1) is resolved and
+  // served as raw ES modules at runtime instead of being pre-bundled.
+  optimizeDeps: { noDiscovery: true, include: [] },
   server: {
     port: PORT,
     strictPort: true,

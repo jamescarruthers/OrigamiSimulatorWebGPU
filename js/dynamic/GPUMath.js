@@ -123,8 +123,11 @@ export function initGPUMath(){
 
     GPUMath.prototype.setSize = function(width, height){
         gl.viewport(0, 0, width, height);
-        canvas.clientWidth = width;
-        canvas.clientHeight = height;
+        // NOTE: `clientWidth`/`clientHeight` are read-only DOM getters. The
+        // original assignments here were silent no-ops in sloppy-mode global
+        // scripts, but ES modules run in strict mode where they throw. This
+        // canvas is GPGPU-only (all passes render to framebuffer textures, not
+        // the canvas backing store), so only the viewport above matters.
     };
 
     GPUMath.prototype.setProgram = function(programName){
