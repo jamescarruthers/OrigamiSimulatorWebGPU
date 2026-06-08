@@ -11,6 +11,7 @@ import '../dependencies/TrackballControls.js';
 import '../dependencies/SVGLoader.js';
 
 import { initGlobals } from './globals.js';
+import { initWebGPUSolver } from './dynamic/WebGPUSolver.js';
 import { initThreeView } from './threeView.js';
 import { initControls } from './controls.js';
 import { init3DUI } from './3dUI.js';
@@ -81,6 +82,9 @@ $(function() {
     // globals.staticSolver = initStaticSolver(globals);//still in development
     globals.dynamicSolver = initDynamicSolver(globals);
     // globals.rigidSolver = initRigidSolver(globals);//still in development
+    // WebGPU compute solver (Phase 2). Exposed as a factory so it can be
+    // instantiated + validated on demand; not yet wired into the live loop.
+    globals.initWebGPUSolver = initWebGPUSolver;
     globals.pattern = initPattern(globals);
     globals.vive = initViveInterface(globals);
     globals.videoAnimator = initVideoAnimator(globals);
