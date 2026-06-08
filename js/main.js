@@ -82,9 +82,11 @@ $(function() {
     // globals.staticSolver = initStaticSolver(globals);//still in development
     globals.dynamicSolver = initDynamicSolver(globals);
     // globals.rigidSolver = initRigidSolver(globals);//still in development
-    // WebGPU compute solver (Phase 2). Exposed as a factory so it can be
-    // instantiated + validated on demand; not yet wired into the live loop.
+    // WebGPU compute solver (Phase 2). Exposed as a factory (used by the
+    // validation specs) and, when opted into via ?solver=webgpu, instantiated
+    // below to drive the live simulation in place of the WebGL solver.
     globals.initWebGPUSolver = initWebGPUSolver;
+    globals.useWebGPUSolver = /[?&]solver=webgpu/.test(location.search);
     globals.pattern = initPattern(globals);
     globals.vive = initViveInterface(globals);
     globals.videoAnimator = initVideoAnimator(globals);
@@ -108,5 +110,25 @@ $(function() {
         }
     }
     model = model.replace(/'/g, ''); // avoid messing up query
-    $(".demo[data-url='"+model+"']").click();
+
+    function loadInitialModel() {
+        $(".demo[data-url='"+model+"']").click();
+    }
+
+    // When the WebGPU compute solver is selected, create it and await its async
+    // device init *before* loading the model, so the device is ready by the time
+    // the model syncs the solver (which is driven synchronously from the render
+    // loop). If WebGPU is unavailable, fall back to the WebGL solver.
+    if (globals.useWebGPUSolver) {
+        globals.webgpuSolver = initWebGPUSolver(globals);
+        globals.webgpuSolver.init().then(function (ok) {
+            if (!ok) {
+                globals.useWebGPUSolver = false;
+                console.warn('WebGPU unavailable; falling back to the WebGL solver.');
+            }
+            loadInitialModel();
+        });
+    } else {
+        loadInitialModel();
+    }
 });

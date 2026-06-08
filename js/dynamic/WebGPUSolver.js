@@ -772,7 +772,14 @@ export function initWebGPUSolver(globals) {
     device.queue.submit([encoder.finish()]);
   }
 
+  let readbackInFlight = false;
+  let lastGlobalError = 0;
   async function readback() {
+    // Self-throttle: the staging buffer can only be mapped once at a time, so a
+    // readback issued while a previous one is still mapping is skipped (the live
+    // loop keeps advancing the sim on the GPU regardless).
+    if (readbackInFlight) return lastGlobalError;
+    readbackInFlight = true;
     const n = counts.numNodes;
     const encoder = device.createCommandEncoder();
     encoder.copyBufferToBuffer(lastPos, 0, readBuf, 0, n * 16);
@@ -800,6 +807,8 @@ export function initWebGPUSolver(globals) {
     const avg = globalError / n;
     const el = document.getElementById('globalError');
     if (el) el.innerHTML = avg.toFixed(7) + ' %';
+    lastGlobalError = avg;
+    readbackInFlight = false;
     return avg;
   }
 

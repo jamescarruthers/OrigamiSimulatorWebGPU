@@ -166,13 +166,20 @@ export function initModel(globals){
     }
 
     function reset(){
-        getSolver().reset();
-        setGeoUpdates();
+        var solver = getSolver();
+        solver.reset();
+        if (solver.isWebGPUSolver) solver.readback().then(setGeoUpdates);
+        else setGeoUpdates();
     }
 
     function step(numSteps){
-        getSolver().solve(numSteps);
-        setGeoUpdates();
+        var solver = getSolver();
+        solver.solve(numSteps);
+        // The legacy solver updates positions synchronously inside solve(); the
+        // WebGPU solver only queues compute, so its positions are read back
+        // asynchronously (self-throttled — overlapping readbacks are skipped).
+        if (solver.isWebGPUSolver) solver.readback().then(setGeoUpdates);
+        else setGeoUpdates();
     }
 
     function setGeoUpdates(){
@@ -186,6 +193,7 @@ export function initModel(globals){
     }
 
     function getSolver(){
+        if (globals.useWebGPUSolver && globals.webgpuSolver) return globals.webgpuSolver;
         if (globals.simType == "dynamic") return globals.dynamicSolver;
         else if (globals.simType == "static") return globals.staticSolver;
         return globals.rigidSolver;
