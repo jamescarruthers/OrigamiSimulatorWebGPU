@@ -76,7 +76,10 @@ export function init3DUI(globals) {
     }
 
     function getIntersectionWithObjectPlane(position){
-        var cameraOrientation = globals.threeView.camera.getWorldDirection();
+        // three r184: getWorldDirection() requires a target vector (r87 returned
+        // a new one). Without it the call throws "Cannot read properties of
+        // undefined (reading 'set')".
+        var cameraOrientation = globals.threeView.camera.getWorldDirection(new THREE.Vector3());
         var dist = position.dot(cameraOrientation);
         raycasterPlane.set(cameraOrientation, -dist);
         var intersection = new THREE.Vector3();
