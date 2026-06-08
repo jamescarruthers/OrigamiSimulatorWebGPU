@@ -166,6 +166,19 @@ export function initModel(globals){
         return positions;
     }
 
+    // On-demand current positions. On the WebGPU zero-copy path the live
+    // positions live in a GPU buffer (the CPU `positions` array is only
+    // refreshed by the throttled readback), so callers that need an accurate
+    // snapshot right now — export, "save state" — must await this. On the WebGL
+    // path it resolves immediately.
+    async function getPositionsAsync(){
+        var solver = getSolver();
+        if (solver && solver.isWebGPUSolver && solver.readback){
+            await solver.readback();
+        }
+        return positions;
+    }
+
     function getColorsArray(){
         return colors;
     }
@@ -466,6 +479,7 @@ export function initModel(globals){
         getCreases: getCreases,
         getGeometry: getGeometry,//for save stl
         getPositionsArray: getPositionsArray,
+        getPositionsAsync: getPositionsAsync,
         getColorsArray: getColorsArray,
         getMesh: getMesh,
 
