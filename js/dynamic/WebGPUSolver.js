@@ -439,11 +439,32 @@ fn main(@builtin(global_invocation_id) gid : vec3<u32>) {
   velocity[i] = vec4<f32>((position[i].xyz - lastPosition[i].xyz) / params.sim.y, 0.0);
 }`;
 
+// Render update: writes ABSOLUTE node positions (displacement + originalPosition)
+// into the geometry's position StorageBufferAttribute buffer, so the renderer
+// reads the solver's output directly with no CPU readback (zero-copy). The
+// buffer is vec4-padded by three (StorageBufferAttribute, itemSize 3 -> 4).
+const RENDER_UPDATE_WGSL = /* wgsl */ `
+${PARAMS_WGSL}
+@group(0) @binding(0) var<storage, read>       staticData   : array<vec4<f32>>;
+@group(0) @binding(1) var<storage, read>       lastPosition : array<vec4<f32>>;
+@group(0) @binding(2) var<storage, read_write> renderPos    : array<vec4<f32>>;
+@group(0) @binding(3) var<uniform>             params       : Params;
+${STATIC_WGSL}
+@compute @workgroup_size(${WORKGROUP_SIZE})
+fn main(@builtin(global_invocation_id) gid : vec3<u32>) {
+  let i = gid.x;
+  if (i >= u32(params.counts.x)) { return; }   // numNodes
+  renderPos[i] = vec4<f32>(lastPosition[i].xyz + sOriginalPosition(i).xyz, 0.0);
+}`;
+
 // ---- module -----------------------------------------------------------
 
 export function initWebGPUSolver(globals) {
 
   let device = null;
+  let rendererBackend = null;   // three's WebGPU backend, for backend.get(attr).buffer
+  let positionStorageAttr = null;   // geometry position attribute (zero-copy render)
+  let renderPosBuffer = null;       // its GPU buffer (resolved lazily after first render)
   let nodes, edges, faces, creases;
   let positions, colors;
 
@@ -685,6 +706,7 @@ export function initWebGPUSolver(globals) {
     pipe.positionCalc = makePipeline(POSITION_CALC_WGSL);
     pipe.positionCalcVerlet = makePipeline(POSITION_CALC_VERLET_WGSL);
     pipe.velocityCalcVerlet = makePipeline(VELOCITY_CALC_VERLET_WGSL);
+    pipe.renderUpdate = makePipeline(RENDER_UPDATE_WGSL);
   }
 
   function dispatch(encoder, pipeline, buffers, count) {
@@ -733,10 +755,18 @@ export function initWebGPUSolver(globals) {
 
   async function init() {
     if (device) return true;
-    if (!navigator.gpu) return false;
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) return false;
-    device = await adapter.requestDevice();
+    // Share the renderer's WebGPU device so the solver's compute output buffers
+    // can feed the render geometry directly (zero-copy). The compute solver
+    // therefore requires the renderer to be on its WebGPU backend (not the
+    // WebGL2 fallback); if it isn't, init fails and the caller uses the WebGL
+    // solver instead.
+    const renderer = globals.threeView && globals.threeView.renderer;
+    if (!renderer || !renderer.init) return false;
+    await renderer.init();
+    const backend = renderer.backend;
+    if (!backend || !backend.isWebGPUBackend || !backend.device) return false;
+    device = backend.device;
+    rendererBackend = backend;
     device.addEventListener('uncapturederror', (e) => {
       console.error('[WebGPUSolver] uncaptured error: ' + e.error.message);
     });
@@ -748,6 +778,29 @@ export function initWebGPUSolver(globals) {
     buildPackedData();
     createBuffers();
     createPipelines();
+    // Zero-copy render target: a StorageBufferAttribute three renders directly
+    // from (itemSize 3 -> padded to vec4). Seeded with the initial absolute
+    // positions so the first frame is correct before the solver runs.
+    positionStorageAttr = new THREE.StorageBufferAttribute(new Float32Array(positions), 3);
+    renderPosBuffer = null;
+  }
+
+  function getPositionStorageAttribute() { return positionStorageAttr; }
+
+  // Write absolute positions into the geometry's storage buffer (zero-copy).
+  // Returns false until three has allocated the attribute's GPU buffer (which
+  // happens on the first render); callers can fall back / retry next frame.
+  function updateRenderPositions() {
+    if (!positionStorageAttr || !rendererBackend) return false;
+    if (!renderPosBuffer) {
+      const data = rendererBackend.get(positionStorageAttr);
+      if (!data || !data.buffer) return false;
+      renderPosBuffer = data.buffer;
+    }
+    const encoder = device.createCommandEncoder();
+    dispatch(encoder, pipe.renderUpdate, [buf.staticData, lastPos, renderPosBuffer, paramsBuf], counts.numNodes);
+    device.queue.submit([encoder.finish()]);
+    return true;
   }
 
   function reset() {
@@ -778,7 +831,7 @@ export function initWebGPUSolver(globals) {
     // Self-throttle: the staging buffer can only be mapped once at a time, so a
     // readback issued while a previous one is still mapping is skipped (the live
     // loop keeps advancing the sim on the GPU regardless).
-    if (readbackInFlight) return lastGlobalError;
+    if (readbackInFlight || !counts) return lastGlobalError;
     readbackInFlight = true;
     const n = counts.numNodes;
     const encoder = device.createCommandEncoder();
@@ -831,5 +884,9 @@ export function initWebGPUSolver(globals) {
     return out;
   }
 
-  return { init, syncNodesAndEdges, reset, solve, readback, debugRead, getCounts: () => counts, isWebGPUSolver: true };
+  return {
+    init, syncNodesAndEdges, reset, solve, readback,
+    getPositionStorageAttribute, updateRenderPositions,
+    debugRead, getCounts: () => counts, isWebGPUSolver: true,
+  };
 }
