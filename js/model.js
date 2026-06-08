@@ -101,8 +101,21 @@ export function initModel(globals){
             });
             backside.visible = false;
             if (!globals.threeView.simulationRunning) {
-                getSolver().render();
-                setGeoUpdates();
+                var solver = getSolver();
+                if (solver.isWebGPUSolver) {
+                    // Refresh the (zero-copy) display: push positions to the
+                    // storage buffer and read back strain colors. Never call
+                    // setGeoUpdates() here — marking the storage position
+                    // attribute needsUpdate would re-upload stale CPU data.
+                    if (solver.updateRenderPositions()) {
+                        solver.readback().then(function(){
+                            if (geometry.attributes.color) geometry.attributes.color.needsUpdate = true;
+                        });
+                    }
+                } else {
+                    solver.render();
+                    setGeoUpdates();
+                }
             }
         } else {
             material = new THREE.MeshPhongMaterial({
@@ -165,21 +178,39 @@ export function initModel(globals){
         globals.threeView.startSimulation();
     }
 
+    var webgpuReadbackThrottle = 0;
+
     function reset(){
         var solver = getSolver();
         solver.reset();
-        if (solver.isWebGPUSolver) solver.readback().then(setGeoUpdates);
-        else setGeoUpdates();
+        if (solver.isWebGPUSolver){
+            // zero-copy render of the (flat) reset state
+            if (!solver.updateRenderPositions()) solver.readback().then(setGeoUpdates);
+        } else setGeoUpdates();
     }
 
     function step(numSteps){
         var solver = getSolver();
         solver.solve(numSteps);
-        // The legacy solver updates positions synchronously inside solve(); the
-        // WebGPU solver only queues compute, so its positions are read back
-        // asynchronously (self-throttled — overlapping readbacks are skipped).
-        if (solver.isWebGPUSolver) solver.readback().then(setGeoUpdates);
-        else setGeoUpdates();
+        if (!solver.isWebGPUSolver){
+            // Legacy: solve() updated positions synchronously inside render().
+            setGeoUpdates();
+            return;
+        }
+        // WebGPU: write positions straight into the geometry's storage buffer
+        // (no per-frame CPU readback). Until three has allocated that buffer
+        // (first render), updateRenderPositions() returns false and we skip.
+        var zeroCopy = solver.updateRenderPositions();
+        if (!zeroCopy) return;
+        // The global-error readout and axial-strain colors still need CPU data,
+        // but only occasionally (plan 4.5) — throttle a readback for them.
+        if (++webgpuReadbackThrottle % 15 === 0){
+            solver.readback().then(function(){
+                if (globals.colorMode == "axialStrain" && geometry.attributes.color){
+                    geometry.attributes.color.needsUpdate = true;
+                }
+            });
+        }
     }
 
     function setGeoUpdates(){
@@ -387,7 +418,18 @@ export function initModel(globals){
     }
 
     function syncSolver(){
-        getSolver().syncNodesAndEdges();
+        var solver = getSolver();
+        solver.syncNodesAndEdges();
+        // Zero-copy: on the WebGPU compute path, render directly from the
+        // solver's position StorageBufferAttribute (shared by the mesh + all
+        // edge line sets) instead of a CPU-uploaded array.
+        if (solver.isWebGPUSolver && solver.getPositionStorageAttribute){
+            var storageAttr = solver.getPositionStorageAttribute();
+            geometry.setAttribute('position', storageAttr);
+            _.each(lines, function(line){
+                line.geometry.setAttribute('position', storageAttr);
+            });
+        }
         globals.simNeedsSync = false;
     }
 
