@@ -965,8 +965,14 @@ export function initWebGPUSolver(globals) {
     return out;
   }
 
+  // Resolve once all submitted GPU work has completed (solve() only queues
+  // commands). Used by the benchmark to time real throughput.
+  function finish() {
+    return device.queue.onSubmittedWorkDone();
+  }
+
   return {
-    init, syncNodesAndEdges, reset, solve, readback,
+    init, syncNodesAndEdges, reset, solve, readback, finish,
     getPositionStorageAttribute, updateRenderPositions,
     debugRead, getCounts: () => counts, isWebGPUSolver: true,
   };
