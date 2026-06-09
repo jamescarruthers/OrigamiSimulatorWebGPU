@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
-import { cpSync } from 'node:fs';
+import { cpSync, existsSync } from 'node:fs';
+import path from 'node:path';
 
 // Vite config for the WebGL -> WebGPU app.
 //
@@ -19,12 +20,18 @@ import { cpSync } from 'node:fs';
 const PORT = Number(process.env.VITE_PORT) || 5179;
 
 function copyStaticRuntimeFiles() {
+  let outDir = 'dist';
   return {
     name: 'copy-static-runtime-files',
     apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir;   // honour a custom build.outDir
+    },
     closeBundle() {
       for (const dir of ['dependencies', 'assets', 'fonts']) {
-        cpSync(dir, `dist/${dir}`, { recursive: true });
+        if (existsSync(dir)) {
+          cpSync(dir, path.join(outDir, dir), { recursive: true });
+        }
       }
     },
   };
