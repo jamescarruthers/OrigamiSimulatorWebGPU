@@ -107,6 +107,12 @@ export function initThreeView(globals) {
         renderer.setAnimationLoop(_loop);
     }
 
+    // Stop the render loop entirely (used by the benchmark to isolate the solver
+    // from render/vsync). Resume with startAnimation().
+    function stopAnimation(){
+        renderer.setAnimationLoop(null);
+    }
+
     function pauseSimulation(){
         globals.simulationRunning = false;
         console.log("pausing simulation");
@@ -238,6 +244,7 @@ export function initThreeView(globals) {
         onWindowResize: onWindowResize,
 
         startAnimation: startAnimation,
+        stopAnimation: stopAnimation,
         startSimulation: startSimulation,
         pauseSimulation: pauseSimulation,
 

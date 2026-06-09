@@ -12,6 +12,7 @@ import '../dependencies/SVGLoader.js';
 
 import { initGlobals } from './globals.js';
 import { initWebGPUSolver } from './dynamic/WebGPUSolver.js';
+import { initBenchmark } from './benchmark.js';
 import { initThreeView } from './threeView.js';
 import { initControls } from './controls.js';
 import { init3DUI } from './3dUI.js';
@@ -92,6 +93,7 @@ $(function() {
     globals.videoAnimator = initVideoAnimator(globals);
 
     globals.curvedFolding = initCurvedFolding(globals);//for curved folding
+    initBenchmark(globals);   // exposes globals.benchmark() + ?benchmark auto-run
 
     // Load demo model: waterbomb unless model specified in URL via ?model=FILE
     // where FILE is the data-url attribute of an <a class="demo">.
@@ -130,5 +132,23 @@ $(function() {
         });
     } else {
         loadInitialModel();
+    }
+
+    // ?benchmark — once the model is loaded and has folded a little, run the
+    // WebGL-vs-WebGPU solver benchmark and show the result.
+    if (/[?&]benchmark/.test(location.search)) {
+        var benchTries = 0;
+        var benchPoll = setInterval(function () {
+            var ready = globals.model && globals.model.getPositionsArray()
+                && globals.model.getPositionsArray().length > 0;
+            if (ready) {
+                clearInterval(benchPoll);
+                setTimeout(function () {
+                    globals.benchmark().then(globals.showBenchmarkOverlay);
+                }, 2500); // let it fold first
+            } else if (++benchTries > 240) {
+                clearInterval(benchPoll);
+            }
+        }, 250);
     }
 });
