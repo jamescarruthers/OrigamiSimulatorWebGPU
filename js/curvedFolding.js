@@ -1,6 +1,6 @@
 export function initCurvedFolding(globals) {
 
-    var FOLD = require('fold');
+    var FOLD = window.require('fold');
 
     var foldData = {};
     var rawFold = {};
@@ -563,7 +563,7 @@ export function initCurvedFolding(globals) {
 
                     case "A":
                     case "a":
-                        let svgpath = require('svgpath');
+                        let svgpath = window.require('svgpath');
                         let pathDataString = "M " + _verticesRaw[_verticesRaw.length-1].x + " " + _verticesRaw[_verticesRaw.length-1].z + " " + type;
                         pathDataString += " ";
                         for (let index = 0; index < segment.values.length; index++) {
@@ -2614,7 +2614,7 @@ export function initCurvedFolding(globals) {
             }
             cdt_edges.push([faceVert.length/2-1, 0]);
 
-            let cdt2d = require('cdt2d');
+            let cdt2d = window.require('cdt2d');
             let cdt_result = cdt2d(cdt_points, cdt_edges, {exterior: false});
 
             let triangles = [];
