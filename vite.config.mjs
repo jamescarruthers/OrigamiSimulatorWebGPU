@@ -1,28 +1,44 @@
 import { defineConfig } from 'vite';
+import { cpSync } from 'node:fs';
 
-// Phase 0 of the WebGL -> WebGPU migration.
+// Vite config for the WebGL -> WebGPU app.
 //
-// The goal of this config is intentionally minimal: serve the EXISTING app
-// (plain <script> tags, globals, inline GLSL) unchanged through Vite's dev
-// server so we get a module-capable toolchain in place WITHOUT changing any
-// runtime behavior. The legacy dependencies in `dependencies/` and the global
-// `js/*.js` files are loaded as classic scripts from `index.html`; Vite serves
-// them statically in dev and does not try to bundle them.
+// Dev: serves the existing app (classic <script> tags + globals + inline GLSL)
+// plus the ES-module entry (js/main.js, which imports three from npm).
 //
-// NOTE: `vite build` (full Rollup bundling) is intentionally NOT relied upon
-// yet. It will be wired up incrementally in later phases as the global scripts
-// are converted to ES modules (see WEBGPU_MIGRATION_PLAN.md, Phase 0/1).
+// Build (`vite build`): bundles the module graph (three + the app) and the CSS,
+// and emits HTML-referenced images. Two things still need copying verbatim,
+// because they're not part of the module graph:
+//   - the classic `dependencies/*.js` libraries loaded via <script> tags, plus
+//     their fonts and the gif/CCapture web workers,
+//   - the runtime-fetched example models under `assets/` (loaded by URL at run
+//     time, so Vite can't see them).
+// A `base: './'` build makes every emitted path relative, so the output works
+// when served from a domain root, a project-pages subpath, or a custom domain
+// without further configuration.
 const PORT = Number(process.env.VITE_PORT) || 5179;
 
-export default defineConfig({
+function copyStaticRuntimeFiles() {
+  return {
+    name: 'copy-static-runtime-files',
+    apply: 'build',
+    closeBundle() {
+      for (const dir of ['dependencies', 'assets', 'fonts']) {
+        cpSync(dir, `dist/${dir}`, { recursive: true });
+      }
+    },
+  };
+}
+
+export default defineConfig(({ command }) => ({
   root: '.',
+  base: command === 'build' ? './' : '/',
   // Disable Vite's dependency discovery scan. The app calls a global
-  // `require('fold' | 'cdt2d' | 'svgpath')` — those are vendored Browserify
-  // bundles loaded as classic <script>s that publish a global `require`, NOT
-  // npm packages, so esbuild's scanner fails to resolve them. With discovery
-  // off, three (the one real npm dependency, added in Phase 1) is resolved and
-  // served as raw ES modules at runtime instead of being pre-bundled.
+  // `window.require('fold' | 'cdt2d' | 'svgpath')` — vendored Browserify bundles
+  // loaded as classic <script>s, NOT npm packages. With discovery off, three
+  // (the one real npm dependency) is resolved on demand.
   optimizeDeps: { noDiscovery: true, include: [] },
+  plugins: [copyStaticRuntimeFiles()],
   server: {
     port: PORT,
     strictPort: true,
@@ -34,8 +50,8 @@ export default defineConfig({
     host: '127.0.0.1',
   },
   build: {
-    // Placeholder — full bundling is enabled once scripts become ES modules.
     outDir: 'dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 2000,
   },
-});
+}));

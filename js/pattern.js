@@ -4,7 +4,7 @@
 
 export function initPattern(globals){
 
-    var FOLD = require('fold');
+    var FOLD = window.require('fold');
 
     var foldData = {};
     var rawFold = {};
