@@ -215,12 +215,23 @@ export function initModel(globals){
         // (first render), updateRenderPositions() returns false and we skip.
         var zeroCopy = solver.updateRenderPositions();
         if (!zeroCopy) return;
-        // The global-error readout and axial-strain colors still need CPU data,
-        // but only occasionally (plan 4.5) — throttle a readback for them.
-        if (++webgpuReadbackThrottle % 15 === 0){
+        // The global-error readout and axial-strain colors need CPU data, but
+        // only occasionally (plan 4.5) — throttle a readback for them. While the
+        // user is editing (drag/forces), read back *every* frame instead so the
+        // raycast hits the right node and the CPU positions stay current; the
+        // render itself stays zero-copy regardless.
+        var interacting = globals.userInteractionEnabled;
+        if (interacting || (++webgpuReadbackThrottle % 15 === 0)){
             solver.readback().then(function(){
                 if (globals.colorMode == "axialStrain" && geometry.attributes.color){
                     geometry.attributes.color.needsUpdate = true;
+                }
+                // Keep the position attribute's CPU array current for raycasting.
+                // Never mark it needsUpdate — that would re-upload the (now stale)
+                // CPU array over the zero-copy GPU buffer.
+                var posAttr = geometry.attributes.position;
+                if (interacting && posAttr && posAttr.isStorageBufferAttribute){
+                    posAttr.array.set(positions);
                 }
             });
         }

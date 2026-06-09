@@ -814,8 +814,89 @@ export function initWebGPUSolver(globals) {
     resetPingPong();
   }
 
+  // ---- interactions (drag / forces / fixed / material) -------------------
+  // Mirror dynamicSolver.solve()'s preamble: when an interaction flag is set,
+  // re-upload the affected packed-data region (or the active lastPosition
+  // buffer) so the running compute solver picks up the change.
+
+  function uploadStaticRegion(name){
+    device.queue.writeBuffer(buf.staticData, off[name] * 16, arr[name]);
+  }
+
+  function updateExternalForcesGPU(){
+    for (let i = 0; i < nodes.length; i++){
+      const ef = nodes[i].getExternalForce();
+      arr.externalForces[4*i] = ef.x; arr.externalForces[4*i+1] = ef.y; arr.externalForces[4*i+2] = ef.z;
+    }
+    uploadStaticRegion('externalForces');
+  }
+
+  function updateFixedGPU(){
+    for (let i = 0; i < nodes.length; i++){
+      arr.mass[4*i+1] = nodes[i].isFixed() ? 1 : 0;
+    }
+    uploadStaticRegion('mass');
+  }
+
+  function updateCreaseMetaGPU(){
+    for (let i = 0; i < creases.length; i++){
+      arr.creaseMeta[i*4] = creases[i].getK();
+    }
+    uploadStaticRegion('creaseMeta');
+  }
+
+  function updateMaterialsGPU(){
+    let index = 0;
+    for (let i = 0; i < nodes.length; i++){
+      for (let j = 0; j < nodes[i].beams.length; j++){
+        const beam = nodes[i].beams[j];
+        arr.beamMeta[4*index] = beam.getK();
+        arr.beamMeta[4*index+1] = beam.getD();
+        index++;
+      }
+    }
+    uploadStaticRegion('beamMeta');
+    dt = calcDt();   // material change alters the stable timestep; writeParams() picks it up
+  }
+
+  function updateLastPositionGPU(){
+    // Upload current relative (displacement) positions to the active lastPosition
+    // buffer. The dragged node is held fixed by the solver, so it stays where the
+    // user put it; the rest are their current values (model.step reads them back
+    // every frame while interacting, matching the WebGL solver's behaviour).
+    const rel = vec4Array(counts.numNodes);
+    for (let i = 0; i < nodes.length; i++){
+      const p = nodes[i].getRelativePosition();
+      rel[4*i] = p.x; rel[4*i+1] = p.y; rel[4*i+2] = p.z;
+    }
+    device.queue.writeBuffer(lastPos, 0, rel);
+  }
+
+  function zeroVelocitiesGPU(){
+    const z = vec4Array(counts.numNodes);
+    device.queue.writeBuffer(buf.velA, 0, z);
+    device.queue.writeBuffer(buf.velB, 0, z);
+  }
+
+  function processInteractions(){
+    if (globals.forceHasChanged){ updateExternalForcesGPU(); globals.forceHasChanged = false; }
+    if (globals.fixedHasChanged){ updateFixedGPU(); globals.fixedHasChanged = false; }
+    if (globals.nodePositionHasChanged){ updateLastPositionGPU(); globals.nodePositionHasChanged = false; }
+    if (globals.creaseMaterialHasChanged){ updateCreaseMetaGPU(); globals.creaseMaterialHasChanged = false; }
+    if (globals.materialHasChanged){ updateMaterialsGPU(); globals.materialHasChanged = false; }
+    // creasePercent is read fresh by writeParams() each solve, so just clear it.
+    if (globals.shouldChangeCreasePercent){ globals.shouldChangeCreasePercent = false; }
+    if (globals.shouldCenterGeo){
+      // Recentering on the centroid (legacy centerTexture) is not ported yet;
+      // damp the velocity so the model settles after a drag.
+      zeroVelocitiesGPU();
+      globals.shouldCenterGeo = false;
+    }
+  }
+
   function solve(numSteps) {
     if (numSteps === undefined) numSteps = globals.numSteps;
+    processInteractions();
     writeParams();
     const verlet = globals.integrationType === 'verlet';
     const encoder = device.createCommandEncoder();
